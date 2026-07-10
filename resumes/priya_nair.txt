@@ -1,0 +1,80 @@
+PRIYA NAIR
+Email: priya.nair@email.com | GitHub: github.com/priyanair | LinkedIn: linkedin.com/in/priyanair
+
+=============================================================
+SUMMARY
+=============================================================
+Final-year B.Tech (Computer Science) student with 18 months of hands-on ML
+and LLM engineering experience across internships and independent projects.
+Comfortable shipping production Python, debugging pipelines, and presenting
+results to non-technical stakeholders. Looking for a Junior AI Engineer role
+where I can contribute to real systems from day one.
+
+=============================================================
+SKILLS
+=============================================================
+Languages    : Python (advanced), SQL (intermediate), Bash (basic)
+ML/DL        : PyTorch, scikit-learn, XGBoost, Hugging Face Transformers
+LLM / Agentic: OpenAI API, LangChain, LangGraph (personal projects),
+               prompt engineering, RAG pipelines, FAISS
+Data          : Pandas, NumPy, Matplotlib, Seaborn
+MLOps / Cloud : Git, GitHub Actions, Docker (basic), AWS S3 (free tier)
+Testing       : pytest, type hints throughout all project code
+
+=============================================================
+EDUCATION
+=============================================================
+B.Tech — Computer Science and Engineering                  2021 – 2025
+Amrita School of Engineering, Bengaluru
+
+Relevant coursework: Machine Learning, Deep Learning, Data Structures,
+Probability & Statistics, Database Systems.
+
+=============================================================
+WORK EXPERIENCE
+=============================================================
+ML Engineering Intern                                 Jun 2024 – Dec 2024
+DataSpark Analytics, Bengaluru
+
+- Built an end-to-end churn prediction pipeline (data cleaning → feature
+  engineering → XGBoost model → REST API via FastAPI). Model reached 0.83
+  ROC-AUC on held-out test set, deployed to AWS EC2.
+- Integrated GPT-4o Mini into a customer support summarisation feature;
+  wrote evaluation harness comparing outputs across 200 test cases.
+- Wrote 47 unit tests (pytest) covering the training pipeline and the API;
+  all tests run on GitHub Actions CI on every PR.
+- Presented results to product manager and two non-technical stakeholders
+  in a 20-minute demo; incorporated feedback to redesign the output format.
+
+=============================================================
+PROJECTS
+=============================================================
+1. RAG-based College Admission Chatbot                        Jan 2024
+   - Built a retrieval-augmented generation system over 350-page admission
+     documents using LangChain + FAISS + OpenAI Embeddings.
+   - Chunked, embedded, and indexed all documents; answer quality evaluated
+     with RAGAS (faithfulness 0.87, answer relevance 0.91).
+   - Open-sourced on GitHub (112 stars); wrote full README and architecture
+     diagram. Presented at intra-college project expo.
+
+2. Skin Lesion Classifier (CNN)                               Sep 2023
+   - End-to-end: downloaded HAM10000 dataset, handled class imbalance via
+     weighted sampler, fine-tuned ResNet-50 in PyTorch.
+   - Reached 79% balanced accuracy; confusion matrix analysis identified two
+     confusion-prone classes and prompted feature-augmentation iteration.
+   - Trained on Google Colab Pro; tracked experiments with wandb.
+
+3. Agentic Research Assistant (personal, ongoing)              Mar 2025
+   - Building a LangGraph multi-agent system that searches arXiv, summarises
+     papers, and drafts literature review sections.
+   - Implements human-in-the-loop approval before any write action fires.
+   - Demonstrates understanding of stateful agent design and guardrail patterns.
+
+=============================================================
+ADDITIONAL
+=============================================================
+- Technical blog (medium.com/@priyanair): 6 posts on LLM prompt engineering
+  and RAG evaluation, total 4.2k reads.
+- Kaggle: 2 competitions completed (top 18% in tabular classification).
+- Open-source: PRs merged in langchain-community (typo + docstring fixes).
+- Languages: English (fluent), Malayalam (native), Hindi (conversational).

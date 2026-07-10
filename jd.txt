@@ -1,0 +1,75 @@
+POSITION: Junior AI Engineer
+COMPANY: TechVest (Series B fintech / AI startup, Bengaluru + Remote)
+TEAM: Applied AI Platform
+REPORTS TO: Lead ML Engineer
+
+=============================================================
+ABOUT THE ROLE
+=============================================================
+TechVest is building the next generation of AI-driven financial tools.
+As a Junior AI Engineer you will work on real production ML/AI systems:
+training models, building pipelines, integrating LLM-powered features,
+and shipping code that thousands of users depend on.
+
+This is a hands-on engineering role — not a research role.
+You write production Python, you debug pipelines, you read error logs
+at 11 pm. If that sounds fun, keep reading.
+
+=============================================================
+CORE RESPONSIBILITIES
+=============================================================
+1. Build and maintain ML training pipelines (PyTorch / scikit-learn).
+2. Integrate LLM APIs (OpenAI, Anthropic, open-source via HuggingFace)
+   into product features; prompt engineering and evals.
+3. Write clean, tested Python code (unit tests, type hints, docstrings).
+4. Work with data engineers to design feature stores and vector databases
+   (FAISS, Pinecone, or equivalent).
+5. Participate in code review, document design decisions, present results
+   clearly to non-technical stakeholders.
+6. Collaborate in 2-person / 3-person project teams using Git workflows.
+
+=============================================================
+REQUIRED SKILLS & EXPERIENCE
+=============================================================
+• Python proficiency — you should be able to write a working ML script
+  from scratch without searching StackOverflow for the basics.
+• Machine learning fundamentals — supervised/unsupervised learning,
+  model evaluation, overfitting/regularisation concepts.
+• At least one real ML/AI project completed end-to-end (data → model →
+  output), not just a tutorial follow-along.
+• Familiarity with LLMs: knows what prompt engineering means, has used
+  at least one LLM API.
+• Version control (Git) — branching, PRs, resolving merge conflicts.
+• Communication — can write a clear technical summary; has presented
+  technical work to peers or in a portfolio.
+
+=============================================================
+NICE TO HAVE (not required)
+=============================================================
+• Experience with LangChain, LangGraph, CrewAI, or similar
+  agentic frameworks.
+• Vector DB experience (FAISS, Pinecone, Weaviate, Chroma).
+• Cloud exposure (AWS, GCP, or Azure — even free-tier projects count).
+• Contributions to open-source, Kaggle competition history, or a
+  published technical blog.
+• FastAPI / REST API design for model serving.
+
+=============================================================
+WHAT WE DO NOT CARE ABOUT
+=============================================================
+• Which college you attended or its prestige ranking.
+• Your CGPA (we care about what you built, not your grades).
+• Your name, gender, age, or background.
+• Years of formal employment — strong interns and recent grads welcome.
+
+=============================================================
+COMPENSATION & LOGISTICS
+=============================================================
+• CTC: ₹8 – 14 LPA depending on demonstrated skills
+• Location: Bengaluru (hybrid) or fully remote within India
+• Interview process: technical screen → take-home project → final round
+
+=============================================================
+TO APPLY
+=============================================================
+Submit resume + one paragraph describing your strongest ML/AI project.

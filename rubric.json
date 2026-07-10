@@ -1,0 +1,93 @@
+{
+  "role": "Junior AI Engineer",
+  "company": "TechVest",
+  "version": "1.0",
+  "total_weight": 1.0,
+  "evidence_rule": "Every score must cite a specific line in the résumé. No evidence = 0 points regardless of implied skill.",
+  "criteria": [
+    {
+      "id": "python_proficiency",
+      "name": "Python Proficiency",
+      "weight": 0.25,
+      "jd_source": "Python proficiency — you should be able to write a working ML script from scratch without searching StackOverflow for the basics.",
+      "scale": {
+        "0": "No Python experience mentioned; or only awareness of the language with zero demonstrated use.",
+        "1": "Completed a basic Python tutorial or course; can write simple scripts (loops, functions). No real project code.",
+        "2": "Wrote Python for data manipulation (Pandas/NumPy) in a project; code exists but lacks structure, tests, or type hints.",
+        "3": "Wrote modular, working Python across at least one non-trivial project; evidence of code quality (docstrings, type hints, or tests).",
+        "4": "Wrote production-quality Python across multiple projects: type hints, tests (pytest), clean module structure, code review experience.",
+        "5": "Demonstrated expert-level Python: shipped production code, large test suite, CI integration, and/or open-source contributions reviewed by others."
+      }
+    },
+    {
+      "id": "ml_fundamentals",
+      "name": "Machine Learning Fundamentals",
+      "weight": 0.20,
+      "jd_source": "Machine learning fundamentals — supervised/unsupervised learning, model evaluation, overfitting/regularisation concepts.",
+      "scale": {
+        "0": "No evidence of any ML knowledge; résumé contains no ML terminology or projects.",
+        "1": "Completed ML courses (e.g. Andrew Ng) but no hands-on project applying the concepts.",
+        "2": "Completed one tutorial-based ML project; understands the basics but has not evaluated models rigorously.",
+        "3": "Completed end-to-end ML project with proper train/test split, metric evaluation (ROC-AUC, R², etc.); can explain overfitting.",
+        "4": "Multiple end-to-end ML projects with thorough evaluation; dealt with real challenges (class imbalance, hyperparameter search, iterative improvement).",
+        "5": "Demonstrates deep ML understanding: handles tricky real-world data, iterates based on error analysis, documents insights — not just final accuracy."
+      }
+    },
+    {
+      "id": "end_to_end_project",
+      "name": "End-to-End ML/AI Project",
+      "weight": 0.20,
+      "jd_source": "At least one real ML/AI project completed end-to-end (data → model → output), not just a tutorial follow-along.",
+      "scale": {
+        "0": "No project evidence; all ML exposure is theoretical or from watching videos.",
+        "1": "Completed a tutorial project step-by-step; followed instructions rather than making independent design choices.",
+        "2": "Built a project end-to-end but it stays local/notebook; no deployment, no write-up, no evidence of independent decision-making.",
+        "3": "Built an end-to-end project with independent decisions (dataset choice, architecture, evaluation approach); has some documentation or presentation.",
+        "4": "Built and deployed/published an end-to-end project; has clear documentation, thoughtful design decisions, and user-facing output.",
+        "5": "Multiple deployed end-to-end projects; each demonstrates problem framing, architecture decisions, real evaluation, and clear communication of results."
+      }
+    },
+    {
+      "id": "llm_familiarity",
+      "name": "LLM / Agentic AI Familiarity",
+      "weight": 0.20,
+      "jd_source": "Familiarity with LLMs: knows what prompt engineering means, has used at least one LLM API.",
+      "scale": {
+        "0": "Has never used an LLM API; only knows LLMs exist as a concept.",
+        "1": "Used ChatGPT or similar as a chatbot; knows what prompt engineering means conceptually but has not written prompts in code.",
+        "2": "Made basic API calls (OpenAI Chat Completions); wrote a simple Q&A script. No prompt engineering beyond system prompt.",
+        "3": "Built a functional LLM-integrated feature: RAG pipeline, tool-calling, or multi-turn chatbot with proper prompt design and output parsing.",
+        "4": "Built multiple LLM-integrated systems; has done prompt evaluation (RAGAS or similar), understands retrieval, chunking, embedding.",
+        "5": "Deep LLM engineering experience: agentic systems, LangGraph/CrewAI, guardrails, evals, production LLM integration with observability."
+      }
+    },
+    {
+      "id": "collaboration_communication",
+      "name": "Collaboration & Communication",
+      "weight": 0.15,
+      "jd_source": "Version control (Git), participate in code review, document design decisions, present results clearly to non-technical stakeholders. Collaborate in 2–3 person teams.",
+      "scale": {
+        "0": "No evidence of working in a team or using version control; no documentation or presentation experience.",
+        "1": "Has used Git for personal repos; no team collaboration, code review, or documented results.",
+        "2": "Basic team experience; used Git but no PR/code review; presented results informally or to peers only.",
+        "3": "Worked in a team using Git/PRs; has presented results to stakeholders (even in an academic/intern setting); some written documentation.",
+        "4": "Strong evidence of team collaboration (PRs, code review); clear technical writing; effective presentations to non-technical audiences.",
+        "5": "Exemplary collaboration: code review history, published technical writing (blog/paper), consistently communicates complex results to mixed audiences."
+      }
+    }
+  ],
+  "thresholds": {
+    "INTERVIEW": 3.5,
+    "HOLD": 2.5,
+    "NOT_A_FIT": 0.0
+  },
+  "notes": [
+    "Scores are computed as: weighted_total = sum(criterion.weight * criterion.score) for all criteria.",
+    "Max possible weighted_total = 5.0",
+    "INTERVIEW if weighted_total >= 3.5",
+    "HOLD if weighted_total >= 2.5 and < 3.5",
+    "NOT_A_FIT if weighted_total < 2.5",
+    "The fairness rule: name, gender, age, college prestige are NEVER criteria. Only the five JD-derived criteria above count.",
+    "The evidence rule is absolute: a score > 0 requires citing a specific résumé line or section."
+  ]
+}

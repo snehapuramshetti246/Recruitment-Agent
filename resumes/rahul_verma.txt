@@ -1,0 +1,83 @@
+RAHUL VERMA
+Email: rahul.v@email.com | GitHub: github.com/rahulv-code
+
+=============================================================
+SUMMARY
+=============================================================
+Recent B.Sc. (Statistics) graduate with strong mathematical foundations and
+6 months of data analytics experience. Transitioning into ML/AI engineering.
+Have completed several online courses and one self-directed ML project.
+Comfortable with Python data manipulation; building up production coding skills.
+
+=============================================================
+SKILLS
+=============================================================
+Languages    : Python (intermediate), R (intermediate), SQL (basic)
+ML/DL        : scikit-learn (tutorials + one project), NumPy, Pandas
+LLM          : Familiar with ChatGPT; completed one OpenAI API tutorial
+               (free-tier key, built a simple Q&A script)
+Data Viz     : Matplotlib, ggplot2 (R)
+Version Ctrl : Git (personal repos only; no team collaboration experience)
+Testing      : No formal unit-testing practice yet
+
+=============================================================
+EDUCATION
+=============================================================
+B.Sc. — Statistics                                         2021 – 2024
+St. Xavier's College, Mumbai
+
+Relevant coursework: Probability Theory, Regression Analysis, Time Series,
+Linear Algebra, Multivariate Statistics.
+
+GPA: 8.4 / 10 (strong academic record in statistics)
+
+=============================================================
+WORK EXPERIENCE
+=============================================================
+Data Analyst Intern                                   Aug 2024 – Jan 2025
+FinEdge Consulting, Mumbai
+
+- Cleaned and analysed customer transaction datasets (10k–50k rows) in
+  Python (Pandas, Matplotlib); delivered 3 monthly reports to senior analysts.
+- Built Excel/Python dashboards summarising loan default trends for the
+  risk team; presentations were "clear and actionable" per supervisor feedback.
+- Did not work on ML models or LLM integrations in this role.
+- Used Git for version control but only on solo branches; no PR or code
+  review experience.
+
+=============================================================
+PROJECTS
+=============================================================
+1. House Price Prediction (scikit-learn)                      Nov 2023
+   - Followed Kaggle tutorial: downloaded Boston Housing dataset, applied
+     linear regression and random forest.
+   - Achieved R² = 0.82 on test split. Did not deploy or productionise.
+   - Code is in a private GitHub repo; no README, no tests.
+
+2. ChatGPT Q&A Wrapper (personal)                             Mar 2025
+   - Wrote a 40-line Python script that reads a .txt file and lets a user
+     ask questions using the OpenAI Chat Completions API.
+   - Hardcoded API key in script (since removed). No error handling, no tests.
+   - Learned what prompt engineering is; has not gone deeper yet.
+
+3. Statistics Final Year Project                               May 2024
+   - Analysed socio-economic factors correlated with loan defaults using
+     logistic regression in R. Presented to faculty panel.
+   - Strong statistical rigour; no software engineering component.
+
+=============================================================
+CERTIFICATIONS
+=============================================================
+- "Machine Learning Specialisation" — Andrew Ng / Coursera (completed)
+- "Python for Data Science" — DataCamp (completed)
+
+=============================================================
+ADDITIONAL
+=============================================================
+- Strong mathematical foundations (probability, linear algebra, statistics)
+  that support understanding of ML theory.
+- Has not yet shipped production code or worked in a team software
+  engineering context.
+- Motivated to transition: currently working through the fast.ai practical
+  deep learning course.
+- Languages: English (fluent), Hindi (native).

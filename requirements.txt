@@ -1,0 +1,31 @@
+# TechVest Recruitment Agent — Dependencies
+# Install: pip install -r requirements.txt
+# Tested on Python 3.11–3.13. Python 3.14 users: see note below.
+#
+# NOTE: If you are on Python 3.14, some packages may not yet have
+# prebuilt wheels. The safest option is to use Python 3.11 or 3.12:
+#   py -3.12 -m venv .venv
+#   .venv\Scripts\activate
+#   pip install -r requirements.txt
+
+# Core LangGraph / LangChain
+langgraph>=0.2.60,<0.3.0
+langchain>=0.3.20,<0.4.0
+langchain-core>=0.3.50,<0.4.0
+langchain-openai>=0.3.10,<0.4.0
+langchain-community>=0.3.20,<0.4.0
+
+# LLM provider via OpenRouter (uses openai-compatible client)
+openai>=1.50.0,<2.0.0
+
+# Pydantic v2 for typed schemas
+pydantic>=2.7.0,<3.0.0
+
+# Streamlit UI
+streamlit>=1.40.0,<2.0.0
+
+# Persistence / logging
+python-dotenv>=1.0.0
+
+# Utilities
+tenacity>=8.0.0
