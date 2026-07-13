@@ -125,6 +125,16 @@ def route_decision(state: AgentState) -> str:
         if key not in scorecards:
             return "score"
 
+    # Any borderline candidate not yet verified?
+    verified_candidates = {
+        step["action_args"].get("candidate")
+        for step in state["trajectory"]
+        if step.get("action") == "verify_scorecard"
+    }
+    for key, scorecard in scorecards.items():
+        if key not in verified_candidates and is_borderline(scorecard, state["rubric"]):
+            return "verifier"
+
     # Any shortlisted candidate needing availability?
     shortlist = state["shortlist"]
     shortlisted_names = {e["candidate"] for e in shortlist if e.get("verdict") == "INTERVIEW"}
@@ -246,7 +256,7 @@ def score_node(state: AgentState) -> AgentState:
         guardrail_note = None if fairness_pass else f"FAIRNESS: {fairness_msg}"
 
         trajectory = _log(state, thought, "score_candidate",
-                          {"candidate": target_key}, observation, guardrail_note)
+                          {"candidate": target_key, "profile_json": json.dumps(profile), "rubric_json": json.dumps(rubric)}, observation, guardrail_note)
 
         new_scorecards = dict(state["scorecards"])
         new_scorecards[target_key] = result
@@ -261,7 +271,189 @@ def score_node(state: AgentState) -> AgentState:
 
     except Exception as e:
         trajectory = _log(state, thought, "score_candidate",
-                          {"candidate": target_key}, f"ERROR: {e}")
+                          {"candidate": target_key, "error": str(e)}, f"ERROR: {e}")
+        return {
+            **state,
+            "trajectory": trajectory,
+            "step_count": new_count,
+            "guardrail_flags": flags,
+            "error": str(e),
+        }
+
+
+# ---------------------------------------------------------------------------
+# Helper: borderline detection
+# ---------------------------------------------------------------------------
+
+def is_borderline(scorecard: dict, rubric: dict, band: float = 0.3) -> bool:
+    """
+    Return True when the candidate's weighted_total falls within ±band of
+    either the INTERVIEW or HOLD threshold — meaning a second-pass check
+    by the Verifier is warranted before a final verdict is made.
+
+    Band is intentionally tight (0.3) so clear strong/weak candidates
+    (>0.3 away from any threshold) skip the verifier entirely.
+    Borderline = score in [3.2, 3.8] (near INTERVIEW=3.5)
+              or score in [2.2, 2.8] (near HOLD=2.5)
+    """
+    thresholds = rubric.get("thresholds", {"INTERVIEW": 3.5, "HOLD": 2.5})
+    total = scorecard.get("weighted_total", 0.0)
+    for threshold in thresholds.values():
+        if abs(total - threshold) <= band:
+            return True
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Node: verifier_node
+# ---------------------------------------------------------------------------
+
+def verifier_node(state: AgentState) -> AgentState:
+    """
+    Second-pass automated verifier for borderline candidates.
+
+    Fires only when a candidate's weighted_total is within ±0.5 of either
+    the INTERVIEW or HOLD threshold (or when the first-pass scorer and a
+    re-check disagree beyond a delta).
+
+    Behaviour:
+      - Re-checks every criterion's evidence citation against the rubric
+        scale description.
+      - Can *confirm* the score (no change), *adjust* it (small correction),
+        or flag *needs_human_review* when evidence is ambiguous.
+      - Writes `verifier` into AgentState.trajectory so Exercise 1/5
+        invariant checks can assert its presence.
+    """
+    from langchain_openai import ChatOpenAI
+    from config import GITHUB_TOKEN, GITHUB_MODELS_BASE_URL, LLM_MODEL
+
+    new_count, flags = _inc(state)
+
+    # Find the most recently scored candidate that is borderline and has not
+    # yet been verified (we check for absence of "verifier" in action names).
+    verified_candidates = {
+        step["action_args"].get("candidate")
+        for step in state["trajectory"]
+        if step.get("action") == "verify_scorecard"
+    }
+
+    target_key = None
+    for key, scorecard in state["scorecards"].items():
+        if key not in verified_candidates and is_borderline(scorecard, state["rubric"]):
+            target_key = key
+            break
+
+    if target_key is None:
+        # Nothing to verify (not borderline, or already verified)
+        return {**state, "step_count": new_count, "guardrail_flags": flags}
+
+    scorecard = state["scorecards"][target_key]
+    rubric = state["rubric"]
+    thought = (
+        f"Candidate {target_key} has a borderline score "
+        f"({scorecard.get('weighted_total', '?'):.2f}). "
+        "Running second-pass evidence verification before final verdict."
+    )
+
+    try:
+        llm = ChatOpenAI(
+            model=LLM_MODEL,
+            api_key=GITHUB_TOKEN,
+            base_url=GITHUB_MODELS_BASE_URL,
+            temperature=0.0,
+            max_retries=2,
+            max_tokens=2000,
+        )
+
+        system_prompt = """You are an independent verification agent for a hiring scorecard.
+Your job: re-check whether each criterion score is properly backed by evidence.
+
+Rules:
+1. For each criterion, read the evidence string and the rubric scale.
+2. If the evidence genuinely supports the score → mark it "confirmed".
+3. If the evidence is weak / over-generous → suggest a corrected score (never > original + 1).
+4. If you cannot determine from the evidence alone → mark "needs_human_review".
+5. Return ONLY valid JSON in exactly this structure:
+{
+  "candidate": "name",
+  "verification_status": "confirmed" | "adjusted" | "needs_human_review",
+  "adjustments": [
+    {"criterion": "id", "original_score": 4, "verified_score": 3, "reason": "..."}
+  ],
+  "verified_weighted_total": 3.7,
+  "notes": "Optional free-text summary"
+}
+If nothing changed, adjustments = [] and verified_weighted_total = original."""
+
+        user_prompt = (
+            f"Scorecard to verify:\n{json.dumps(scorecard, indent=2)}\n\n"
+            f"Rubric:\n{json.dumps(rubric, indent=2)}"
+        )
+
+        response = llm.invoke([
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ])
+
+        raw = response.content.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+            raw = raw.strip()
+
+        verification = json.loads(raw)
+
+        # Apply any verified score adjustments back to the scorecard
+        new_scorecards = dict(state["scorecards"])
+        updated_scorecard = dict(scorecard)
+
+        if verification.get("adjustments"):
+            criteria_map = {c["criterion"]: c for c in updated_scorecard.get("criteria", [])}
+            for adj in verification["adjustments"]:
+                cid = adj.get("criterion")
+                if cid in criteria_map:
+                    criteria_map[cid] = dict(criteria_map[cid])
+                    criteria_map[cid]["score"] = adj["verified_score"]
+            updated_scorecard["criteria"] = list(criteria_map.values())
+
+        if "verified_weighted_total" in verification:
+            updated_scorecard["weighted_total"] = round(
+                verification["verified_weighted_total"], 3
+            )
+
+        # Mark scorecard as verified
+        updated_scorecard["verifier_status"] = verification.get(
+            "verification_status", "confirmed"
+        )
+        updated_scorecard["verifier_notes"] = verification.get("notes", "")
+
+        if verification.get("verification_status") == "needs_human_review":
+            flags["human_gate_status"] = "waiting_approval"
+
+        new_scorecards[target_key] = updated_scorecard
+
+        observation = json.dumps(verification, indent=2)
+        trajectory = _log(
+            state, thought, "verify_scorecard",
+            {"candidate": target_key}, observation,
+            "VERIFIER: needs_human_review" if verification.get(
+                "verification_status") == "needs_human_review" else None,
+        )
+
+        return {
+            **state,
+            "scorecards": new_scorecards,
+            "trajectory": trajectory,
+            "step_count": new_count,
+            "guardrail_flags": flags,
+        }
+
+    except Exception as e:
+        trajectory = _log(
+            state, thought, "verify_scorecard",
+            {"candidate": target_key}, f"ERROR: {e}"
+        )
         return {
             **state,
             "trajectory": trajectory,
@@ -518,6 +710,7 @@ def build_graph() -> StateGraph:
     graph.add_node("router", router_node)
     graph.add_node("parse", parse_node)
     graph.add_node("score", score_node)
+    graph.add_node("verifier", verifier_node)
     graph.add_node("decide", decide_node)
     graph.add_node("availability", availability_node)
     graph.add_node("schedule", schedule_node)
@@ -532,6 +725,7 @@ def build_graph() -> StateGraph:
         {
             "parse": "parse",
             "score": "score",
+            "verifier": "verifier",
             "decide": "decide",
             "availability": "availability",
             "schedule": "schedule",
@@ -542,6 +736,7 @@ def build_graph() -> StateGraph:
     # After each action node, loop back to router for re-evaluation
     graph.add_edge("parse", "router")
     graph.add_edge("score", "router")
+    graph.add_edge("verifier", "router")
     graph.add_edge("availability", "router")
     graph.add_edge("decide", "router")
     graph.add_edge("schedule", END)

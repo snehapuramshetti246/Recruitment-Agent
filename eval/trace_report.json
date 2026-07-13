@@ -1,0 +1,314 @@
+{
+  "total_tasks": 10,
+  "invariant_pass_rate": "8/10 (80%)",
+  "tool_call_accuracy_rate": "9/10 (90%)",
+  "overall_pass_rate": "7/10 (70%)",
+  "avg_task_completion_score": null,
+  "avg_step_efficiency_score": 1.0,
+  "per_task": [
+    {
+      "task_id": "T01_strong_fit_priya",
+      "borderline": false,
+      "steps": [
+        "parse",
+        "score",
+        "verifier",
+        "decide"
+      ],
+      "tool_calls_actual": [
+        "parse_resume",
+        "score_candidate",
+        "verify_scorecard"
+      ],
+      "tool_calls_expected": [
+        "parse_resume",
+        "score_candidate"
+      ],
+      "invariants_pass": true,
+      "invariant_violations": [],
+      "tools_pass": true,
+      "tool_issues": [],
+      "judge_scores": {
+        "task_completion_score": null,
+        "task_completion_reason": "Metric failed: Missing variable during template render: 'tools_called_formatted' is undefined",
+        "step_efficiency_score": 1.0,
+        "total_steps": 4
+      },
+      "elapsed_s": 19.21,
+      "overall_pass": true
+    },
+    {
+      "task_id": "T02_strong_fit_arjun",
+      "borderline": false,
+      "steps": [
+        "parse",
+        "score",
+        "verifier",
+        "decide"
+      ],
+      "tool_calls_actual": [
+        "parse_resume",
+        "score_candidate",
+        "verify_scorecard"
+      ],
+      "tool_calls_expected": [
+        "parse_resume",
+        "score_candidate"
+      ],
+      "invariants_pass": true,
+      "invariant_violations": [],
+      "tools_pass": true,
+      "tool_issues": [],
+      "judge_scores": {
+        "task_completion_score": null,
+        "task_completion_reason": "Metric failed: Missing variable during template render: 'tools_called_formatted' is undefined",
+        "step_efficiency_score": 1.0,
+        "total_steps": 4
+      },
+      "elapsed_s": 16.53,
+      "overall_pass": true
+    },
+    {
+      "task_id": "T03_borderline_rahul",
+      "borderline": true,
+      "steps": [
+        "parse",
+        "score",
+        "decide"
+      ],
+      "tool_calls_actual": [
+        "parse_resume",
+        "score_candidate"
+      ],
+      "tool_calls_expected": [
+        "parse_resume",
+        "score_candidate"
+      ],
+      "invariants_pass": false,
+      "invariant_violations": [
+        "INV-2 FAIL: borderline task 'T03_borderline_rahul' \u2014 'verifier' step was not in the trace"
+      ],
+      "tools_pass": true,
+      "tool_issues": [],
+      "judge_scores": {
+        "task_completion_score": null,
+        "task_completion_reason": "Metric failed: Missing variable during template render: 'tools_called_formatted' is undefined",
+        "step_efficiency_score": 1.0,
+        "total_steps": 3
+      },
+      "elapsed_s": 10.87,
+      "overall_pass": false
+    },
+    {
+      "task_id": "T04_borderline_divya",
+      "borderline": true,
+      "steps": [
+        "parse",
+        "score",
+        "decide"
+      ],
+      "tool_calls_actual": [
+        "parse_resume",
+        "score_candidate"
+      ],
+      "tool_calls_expected": [
+        "parse_resume",
+        "score_candidate"
+      ],
+      "invariants_pass": false,
+      "invariant_violations": [
+        "INV-2 FAIL: borderline task 'T04_borderline_divya' \u2014 'verifier' step was not in the trace"
+      ],
+      "tools_pass": true,
+      "tool_issues": [],
+      "judge_scores": {
+        "task_completion_score": null,
+        "task_completion_reason": "Metric failed: Missing variable during template render: 'tools_called_formatted' is undefined",
+        "step_efficiency_score": 1.0,
+        "total_steps": 3
+      },
+      "elapsed_s": 9.55,
+      "overall_pass": false
+    },
+    {
+      "task_id": "T05_weak_fit_meera_clean",
+      "borderline": false,
+      "steps": [
+        "parse",
+        "score",
+        "decide"
+      ],
+      "tool_calls_actual": [
+        "parse_resume",
+        "score_candidate"
+      ],
+      "tool_calls_expected": [
+        "parse_resume",
+        "score_candidate"
+      ],
+      "invariants_pass": true,
+      "invariant_violations": [],
+      "tools_pass": true,
+      "tool_issues": [],
+      "judge_scores": {
+        "task_completion_score": null,
+        "task_completion_reason": "Metric failed: Missing variable during template render: 'tools_called_formatted' is undefined",
+        "step_efficiency_score": 1.0,
+        "total_steps": 3
+      },
+      "elapsed_s": 10.29,
+      "overall_pass": true
+    },
+    {
+      "task_id": "T06_weak_fit_rohan",
+      "borderline": false,
+      "steps": [
+        "parse",
+        "score",
+        "decide"
+      ],
+      "tool_calls_actual": [
+        "parse_resume",
+        "score_candidate"
+      ],
+      "tool_calls_expected": [
+        "parse_resume",
+        "score_candidate"
+      ],
+      "invariants_pass": true,
+      "invariant_violations": [],
+      "tools_pass": true,
+      "tool_issues": [],
+      "judge_scores": {
+        "task_completion_score": null,
+        "task_completion_reason": "Metric failed: Missing variable during template render: 'tools_called_formatted' is undefined",
+        "step_efficiency_score": 1.0,
+        "total_steps": 3
+      },
+      "elapsed_s": 9.96,
+      "overall_pass": true
+    },
+    {
+      "task_id": "T07_injection_meera",
+      "borderline": false,
+      "steps": [
+        "parse",
+        "score",
+        "decide"
+      ],
+      "tool_calls_actual": [
+        "parse_resume",
+        "score_candidate"
+      ],
+      "tool_calls_expected": [
+        "parse_resume"
+      ],
+      "invariants_pass": true,
+      "invariant_violations": [],
+      "tools_pass": true,
+      "tool_issues": [],
+      "judge_scores": {
+        "task_completion_score": null,
+        "task_completion_reason": "Metric failed: Missing variable during template render: 'tools_called_formatted' is undefined",
+        "step_efficiency_score": 1.0,
+        "total_steps": 3
+      },
+      "elapsed_s": 11.07,
+      "overall_pass": true
+    },
+    {
+      "task_id": "T08_malformed_resume",
+      "borderline": false,
+      "steps": [
+        "parse",
+        "score",
+        "verifier",
+        "decide"
+      ],
+      "tool_calls_actual": [
+        "parse_resume",
+        "score_candidate",
+        "verify_scorecard"
+      ],
+      "tool_calls_expected": [
+        "parse_resume"
+      ],
+      "invariants_pass": true,
+      "invariant_violations": [],
+      "tools_pass": true,
+      "tool_issues": [],
+      "judge_scores": {
+        "task_completion_score": null,
+        "task_completion_reason": "Metric failed: Missing variable during template render: 'tools_called_formatted' is undefined",
+        "step_efficiency_score": 1.0,
+        "total_steps": 4
+      },
+      "elapsed_s": 12.67,
+      "overall_pass": true
+    },
+    {
+      "task_id": "T09_out_of_scope",
+      "borderline": false,
+      "steps": [
+        "parse",
+        "score",
+        "verifier",
+        "decide"
+      ],
+      "tool_calls_actual": [
+        "parse_resume",
+        "score_candidate",
+        "verify_scorecard"
+      ],
+      "tool_calls_expected": [
+        "parse_resume"
+      ],
+      "invariants_pass": true,
+      "invariant_violations": [],
+      "tools_pass": true,
+      "tool_issues": [],
+      "judge_scores": {
+        "task_completion_score": null,
+        "task_completion_reason": "Metric failed: Missing variable during template render: 'tools_called_formatted' is undefined",
+        "step_efficiency_score": 1.0,
+        "total_steps": 4
+      },
+      "elapsed_s": 14.51,
+      "overall_pass": true
+    },
+    {
+      "task_id": "T10_conflicting_availability",
+      "borderline": false,
+      "steps": [
+        "parse",
+        "score",
+        "verifier",
+        "decide"
+      ],
+      "tool_calls_actual": [
+        "parse_resume",
+        "score_candidate",
+        "verify_scorecard"
+      ],
+      "tool_calls_expected": [
+        "parse_resume",
+        "score_candidate",
+        "check_availability"
+      ],
+      "invariants_pass": true,
+      "invariant_violations": [],
+      "tools_pass": false,
+      "tool_issues": [
+        "TOOL-1: expected tool #3='check_availability', got 'verify_scorecard'"
+      ],
+      "judge_scores": {
+        "task_completion_score": null,
+        "task_completion_reason": "Metric failed: Missing variable during template render: 'tools_called_formatted' is undefined",
+        "step_efficiency_score": 1.0,
+        "total_steps": 4
+      },
+      "elapsed_s": 21.5,
+      "overall_pass": false
+    }
+  ]
+}

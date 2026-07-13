@@ -14,6 +14,7 @@ import json
 import time
 import threading
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
@@ -629,14 +630,551 @@ def render_trajectory_tab():
     st.caption("Formal agent evaluation metrics arrive Day 7.")
 
 
+# ── Tab 3 — Eval Dashboard ────────────────────────────────────────────────────
+
+def _load_report(filename: str) -> dict | None:
+    """Load a JSON eval report if it exists."""
+    path = Path(__file__).parent / "eval" / filename
+    if path.exists():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+    return None
+
+
+def _eval_metric_card(col, label: str, value: str, icon: str, ok: bool | None = None) -> None:
+    """Render a coloured metric card inside a column."""
+    if ok is True:
+        bg, fg = "#dcfce7", "#166534"
+    elif ok is False:
+        bg, fg = "#fee2e2", "#991b1b"
+    else:
+        bg, fg = "#f1f5f9", "#334155"
+    with col:
+        st.markdown(
+            f"""
+            <div style="background:{bg}; border-radius:10px; padding:16px 18px;
+                        margin-bottom:6px; border:1px solid #e2e8f0;">
+              <div style="font-size:1.6rem;">{icon}</div>
+              <div style="font-size:1.35rem; font-weight:700; color:{fg};">{value}</div>
+              <div style="font-size:.82rem; color:#64748b; margin-top:2px;">{label}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def _severity_badge(sev: str) -> str:
+    colours = {
+        "Critical": ("#fee2e2", "#991b1b"),
+        "Medium":   ("#fef3c7", "#92400e"),
+        "Low":      ("#f1f5f9", "#475569"),
+    }
+    bg, fg = colours.get(sev, ("#f1f5f9", "#475569"))
+    return (
+        f'<span style="background:{bg}; color:{fg}; padding:2px 10px; '
+        f'border-radius:12px; font-size:.78rem; font-weight:700;">{sev}</span>'
+    )
+
+
+def _task_status_icon(passed: bool | None) -> str:
+    if passed is True:
+        return "✅"
+    if passed is False:
+        return "❌"
+    return "⚠️"
+
+
+def render_eval_dashboard():
+    from pathlib import Path
+
+    st.markdown("## 📊 Evaluation Dashboard")
+    st.caption(
+        "Run the eval suite from the terminal (`python eval/test_trace.py` etc.) "
+        "and this dashboard will display the results automatically."
+    )
+
+    # ── Check which reports exist ─────────────────────────────────────────────
+    trace_report  = _load_report("trace_report.json")
+    output_report = _load_report("output_report.json")
+    gate_report   = _load_report("gate_report.json")
+    red_report    = _load_report("redteam/giskard_findings.json")
+    tasks_index   = _load_report("tasks.json")
+
+    any_report = any([trace_report, output_report, gate_report, red_report])
+
+    if not any_report:
+        st.info(
+            "No eval reports found yet.  \n"
+            "Run these commands in your terminal, then refresh this page:\n"
+            "```bash\n"
+            "python eval/tasks.py\n"
+            "python eval/test_trace.py\n"
+            "python eval/test_output.py\n"
+            "python eval/redteam/giskard_scan.py\n"
+            "python eval/test_gate.py\n"
+            "```"
+        )
+
+    # ── Quick re-run buttons ──────────────────────────────────────────────────
+    # Session state keys used here:
+    #   eval_running      : str | None  — which exercise is currently running
+    #   eval_last_result  : dict | None — {exercise, returncode, stdout, stderr}
+
+    if "eval_running" not in st.session_state:
+        st.session_state["eval_running"] = None
+    if "eval_last_result" not in st.session_state:
+        st.session_state["eval_last_result"] = None
+
+    EVAL_EXERCISES = {
+        "ex1": ("Ex 1 · Tasks",    ["python", "eval/tasks.py"]),
+        "ex2": ("Ex 2 · Trace",    ["python", "eval/test_trace.py"]),
+        "ex3": ("Ex 3 · Output",   ["python", "eval/test_output.py"]),
+        "ex4": ("Ex 4 · Red-team", ["python", "eval/redteam/giskard_scan.py"]),
+        "ex5": ("Ex 5 · Gate",     ["python", "eval/test_gate.py"]),
+    }
+
+    with st.expander("▶️  Run eval suite now (requires LLM API access)", expanded=True):
+        st.warning(
+            "Each exercise calls the LLM for every task. "
+            "This may take several minutes and will consume API credits.",
+            icon="⚠️",
+        )
+
+        # ── Button row ────────────────────────────────────────────────────────
+        btn_cols = st.columns(5)
+        for col, (ex_key, (label, _cmd)) in zip(btn_cols, EVAL_EXERCISES.items()):
+            with col:
+                is_running = st.session_state["eval_running"] == ex_key
+                btn_label  = f"⏳ {label}" if is_running else label
+                disabled   = st.session_state["eval_running"] is not None
+                if st.button(btn_label, key=f"eval_btn_{ex_key}",
+                             use_container_width=True, disabled=disabled):
+                    st.session_state["eval_running"] = ex_key
+                    st.session_state["eval_last_result"] = None
+                    st.rerun()
+
+        # ── Run the selected exercise (blocking, but inside the render pass) ─
+        running_key = st.session_state.get("eval_running")
+        if running_key and running_key in EVAL_EXERCISES:
+            label, cmd = EVAL_EXERCISES[running_key]
+            import subprocess, sys
+
+            output_box = st.empty()
+            output_box.info(f"⏳ Running **{label}** — please wait…")
+
+            try:
+                proc = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    cwd=str(Path(__file__).parent),
+                    timeout=600,      # 10-minute hard cap per exercise
+                )
+                result = {
+                    "exercise": label,
+                    "returncode": proc.returncode,
+                    "stdout": proc.stdout,
+                    "stderr": proc.stderr,
+                }
+            except subprocess.TimeoutExpired:
+                result = {
+                    "exercise": label,
+                    "returncode": -1,
+                    "stdout": "",
+                    "stderr": "Process timed out after 10 minutes.",
+                }
+            except Exception as exc:
+                result = {
+                    "exercise": label,
+                    "returncode": -1,
+                    "stdout": "",
+                    "stderr": str(exc),
+                }
+
+            st.session_state["eval_running"]     = None
+            st.session_state["eval_last_result"] = result
+            output_box.empty()
+            # Reload the reports and rerender — do NOT rerun before saving result
+            st.rerun()
+
+        # ── Show last result ──────────────────────────────────────────────────
+        last = st.session_state.get("eval_last_result")
+        if last:
+            ex_label = last.get("exercise", "")
+            rc       = last.get("returncode", -1)
+            stdout   = last.get("stdout", "").strip()
+            stderr   = last.get("stderr", "").strip()
+
+            if rc == 0:
+                st.success(f"✅ **{ex_label}** completed successfully.")
+            else:
+                st.error(f"❌ **{ex_label}** failed (exit code {rc}).")
+
+            if stdout:
+                with st.expander("📄 Output", expanded=(rc != 0)):
+                    st.code(stdout[-3000:], language="text")   # last 3000 chars
+            if stderr:
+                with st.expander("⚠️ Stderr / Warnings", expanded=(rc != 0)):
+                    st.code(stderr[-2000:], language="text")
+
+    st.divider()
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SCORECARD — top-level summary numbers
+    # ════════════════════════════════════════════════════════════════════════
+    st.markdown("### 🏆 Final Scorecard")
+
+    # Parse the key numbers
+    inv_rate   = trace_report.get("invariant_pass_rate", "—")     if trace_report  else "—"
+    tool_rate  = trace_report.get("tool_call_accuracy_rate", "—") if trace_report  else "—"
+    tc_score   = trace_report.get("avg_task_completion_score")    if trace_report  else None
+    se_score   = trace_report.get("avg_step_efficiency_score")    if trace_report  else None
+    faith_score= output_report.get("avg_faithfulness_score")      if output_report else None
+    rel_score  = output_report.get("avg_relevancy_score")         if output_report else None
+    gate_rate  = gate_report.get("gate_fire_rate", "—")           if gate_report   else "—"
+    crit_open  = red_report.get("summary", {}).get("critical", "—") if red_report  else "—"
+
+    def _pct_ok(rate_str: str) -> bool | None:
+        if rate_str == "—":
+            return None
+        try:
+            num = int(rate_str.split("(")[1].rstrip("%)"))
+            return num == 100
+        except Exception:
+            return None
+
+    def _score_ok(val, threshold: float) -> bool | None:
+        if val is None:
+            return None
+        try:
+            return float(val) >= threshold
+        except Exception:
+            return None
+
+    c1, c2, c3, c4 = st.columns(4)
+    _eval_metric_card(c1, "Invariant Pass Rate",       inv_rate,   "🔍", _pct_ok(inv_rate))
+    _eval_metric_card(c2, "Tool-Call Accuracy",        tool_rate,  "🔧", _pct_ok(tool_rate))
+    _eval_metric_card(c3, "Gate Fire Rate",            gate_rate,  "🔒", _pct_ok(gate_rate))
+    _eval_metric_card(c4, "Critical Findings Open",
+                      str(crit_open),
+                      "🚨",
+                      True if crit_open == 0 else (False if isinstance(crit_open, int) and crit_open > 0 else None))
+
+    c5, c6, c7, c8 = st.columns(4)
+    _eval_metric_card(c5, "Avg Faithfulness",
+                      f"{faith_score:.2f}" if faith_score is not None else "—",
+                      "📎", _score_ok(faith_score, 0.8))
+    _eval_metric_card(c6, "Avg Relevancy",
+                      f"{rel_score:.2f}" if rel_score is not None else "—",
+                      "🎯", _score_ok(rel_score, 0.7))
+    _eval_metric_card(c7, "Avg TaskCompletion",
+                      f"{tc_score:.2f}" if tc_score is not None else "—",
+                      "✅", _score_ok(tc_score, 0.5))
+    _eval_metric_card(c8, "Avg StepEfficiency",
+                      f"{se_score:.2f}" if se_score is not None else "—",
+                      "⚡", _score_ok(se_score, 0.5))
+
+    st.divider()
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SECTION 1 — Task Dataset
+    # ════════════════════════════════════════════════════════════════════════
+    st.markdown("### 📋 Exercise 1 — Evaluation Dataset (10 Tasks)")
+
+    if tasks_index:
+        rows = []
+        for t in tasks_index:
+            rows.append({
+                "ID":           t["id"],
+                "Borderline":   "🔶 Yes" if t.get("borderline") else "—",
+                "Candidates":   ", ".join(t.get("candidate_keys", [])),
+                "Expected Trajectory": " → ".join(t.get("expected_trajectory", [])),
+                "Expected Verdict":    str(list(t.get("expected_decision", {}).values())[:1]),
+            })
+        st.dataframe(rows, use_container_width=True, hide_index=True)
+    else:
+        st.info("Run `python eval/tasks.py` to generate the task index.")
+
+    st.divider()
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SECTION 2 — Trace + Tool-Call (Exercise 2)
+    # ════════════════════════════════════════════════════════════════════════
+    st.markdown("### 🔍 Exercise 2 — Trace Invariants + Tool-Call Accuracy")
+
+    if trace_report:
+        per_task = trace_report.get("per_task", [])
+        if per_task:
+            rows = []
+            for r in per_task:
+                inv_icon  = _task_status_icon(r.get("invariants_pass"))
+                tool_icon = _task_status_icon(r.get("tools_pass"))
+                overall   = _task_status_icon(r.get("overall_pass"))
+                tc = r.get("judge_scores", {}).get("task_completion_score")
+                se = r.get("judge_scores", {}).get("step_efficiency_score")
+                rows.append({
+                    "Task ID":      r["task_id"],
+                    "Steps":        " → ".join(r.get("steps", [])),
+                    "Invariants":   inv_icon,
+                    "Tool Calls":   tool_icon,
+                    "TaskComp.":    f"{tc:.2f}" if tc is not None else "—",
+                    "StepEff.":     f"{se:.2f}" if se is not None else "—",
+                    "Overall":      overall,
+                    "Time (s)":     r.get("elapsed_s", "—"),
+                })
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+
+            # Show violations
+            violations_found = False
+            for r in per_task:
+                if r.get("invariant_violations") or r.get("tool_issues"):
+                    if not violations_found:
+                        st.markdown("**Violations / Issues:**")
+                        violations_found = True
+                    with st.expander(f"⚠️ {r['task_id']} issues"):
+                        for v in r.get("invariant_violations", []):
+                            st.error(v)
+                        for v in r.get("tool_issues", []):
+                            st.warning(v)
+        else:
+            st.info("No per-task data in trace_report.json.")
+    else:
+        st.info("No trace report yet. Run `python eval/test_trace.py`.")
+
+    st.divider()
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SECTION 3 — Output Quality (Exercise 3)
+    # ════════════════════════════════════════════════════════════════════════
+    st.markdown("### 📝 Exercise 3 — Output Quality (DeepEval Metrics)")
+
+    if output_report:
+        per_task = output_report.get("per_task", [])
+        if per_task:
+            rows = []
+            for r in per_task:
+                # Flatten faithfulness scores
+                faith = r.get("faithfulness", {}) or {}
+                faith_scores = [
+                    v.get("score") for v in faith.values()
+                    if isinstance(v, dict) and v.get("score") is not None
+                ]
+                avg_f = sum(faith_scores) / len(faith_scores) if faith_scores else None
+
+                rel = r.get("relevancy", {}) or {}
+                rel_scores = [
+                    v.get("score") for v in rel.values()
+                    if isinstance(v, dict) and v.get("score") is not None
+                ]
+                avg_r = sum(rel_scores) / len(rel_scores) if rel_scores else None
+
+                comp_icon  = _task_status_icon(r.get("completion_pass"))
+                fair_icon  = _task_status_icon(r.get("fairness_pass"))
+                overall    = _task_status_icon(r.get("overall_pass"))
+
+                rows.append({
+                    "Task ID":      r["task_id"],
+                    "Completion":   comp_icon,
+                    "Faithfulness": f"{avg_f:.2f}" if avg_f is not None else "—",
+                    "Relevancy":    f"{avg_r:.2f}" if avg_r is not None else "—",
+                    "Fairness":     fair_icon,
+                    "Overall":      overall,
+                    "Time (s)":     r.get("elapsed_s", "—"),
+                })
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+            st.caption(
+                f"Thresholds: Faithfulness ≥ {output_report.get('faithfulness_threshold', 0.8)}  "
+                f"| Relevancy ≥ {output_report.get('relevancy_threshold', 0.7)}"
+            )
+        else:
+            st.info("No per-task data in output_report.json.")
+    else:
+        st.info("No output report yet. Run `python eval/test_output.py`.")
+
+    st.divider()
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SECTION 4 — Red-Team Findings (Exercise 4)
+    # ════════════════════════════════════════════════════════════════════════
+    st.markdown("### 🚨 Exercise 4 — Red-Team Findings")
+
+    if red_report:
+        findings = red_report.get("findings", [])
+        summary  = red_report.get("summary", {})
+
+        crit = summary.get("critical", 0)
+        med  = summary.get("medium", 0)
+        low  = summary.get("low", 0)
+
+        c1, c2, c3 = st.columns(3)
+        _eval_metric_card(c1, "Critical Findings", str(crit), "🔴", crit == 0)
+        _eval_metric_card(c2, "Medium Findings",   str(med),  "🟡", med  == 0)
+        _eval_metric_card(c3, "Low Findings",       str(low),  "🟢", True)
+
+        if findings:
+            st.markdown("**Findings Table:**")
+            rows = []
+            for f in findings:
+                rows.append({
+                    "ID":          f.get("id", "—"),
+                    "Category":    f.get("category", "—"),
+                    "Severity":    f.get("severity", "—"),
+                    "Layer":       f.get("layer", "—"),
+                    "Status":      f.get("status", "—"),
+                    "Description": f.get("description", "—")[:70],
+                })
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+
+            # Detailed finding cards for non-passing items
+            failures = [f for f in findings if f.get("status") == "FAIL"]
+            if failures:
+                st.markdown("**Findings requiring fixes:**")
+                for f in failures:
+                    sev = f.get("severity", "Low")
+                    with st.expander(
+                        f"{_severity_badge(sev)} {f.get('id')} — {f.get('description', '')[:60]}",
+                        expanded=sev == "Critical",
+                    ):
+                        st.markdown(f"**Category:** {f.get('category')}")
+                        st.markdown(f"**Layer broken:** {f.get('layer')}")
+                        st.markdown(f"**Issues:**")
+                        for issue in f.get("issues", []):
+                            st.error(issue)
+                        st.markdown(f"**Suggested fix:** {f.get('fix')}")
+                    st.markdown("", unsafe_allow_html=True)
+            else:
+                st.success("✅ No failing red-team cases.")
+        else:
+            st.info("No findings recorded yet.")
+    else:
+        st.info("No red-team report yet. Run `python eval/redteam/giskard_scan.py`.")
+
+    st.divider()
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SECTION 5 — Human Gate Assertions (Exercise 5)
+    # ════════════════════════════════════════════════════════════════════════
+    st.markdown("### 🔒 Exercise 5 — Human-in-the-Loop Gate")
+
+    if gate_report:
+        passed   = gate_report.get("passed", 0)
+        total_g  = gate_report.get("total_gate_tests", 0)
+        failed   = gate_report.get("failed", 0)
+        rate_str = gate_report.get("gate_fire_rate", "—")
+
+        if failed == 0:
+            st.success(f"✅ Gate fired on ALL {total_g} high-stakes tasks ({rate_str}). "
+                       "Agent is safe to proceed.")
+        else:
+            st.error(
+                f"❌ CRITICAL: Gate failed on {failed}/{total_g} tasks. "
+                "Agent MUST NOT be trusted with real hiring decisions until fixed."
+            )
+
+        # Per-test breakdown
+        tests = gate_report.get("tests", {})
+        test_labels = {
+            "positive_gate":    "Test 1 — Positive Gate (INTERVIEW must pause)",
+            "no_skip":          "Test 2 — No-Skip (obvious cases still need approval)",
+            "verifier_not_gate":"Test 3 — Verifier ≠ Human Gate",
+            "conflict_escalation": "Test 4 — Conflicting Availability Escalation",
+        }
+
+        for key, label in test_labels.items():
+            test_data = tests.get(key, {})
+            results   = test_data.get("results", [test_data.get("result", {})])
+
+            all_passed = all(r.get("passed", False) for r in results if r)
+            icon = "✅" if all_passed else "❌ CRITICAL"
+
+            with st.expander(f"{icon}  {label}", expanded=not all_passed):
+                if not results:
+                    st.info("No results for this test.")
+                    continue
+                rows = []
+                for r in results:
+                    if not r:
+                        continue
+                    detail = r.get("detail") or r.get("gate_detail") or {}
+                    rows.append({
+                        "Task ID":  r.get("task_id", "—"),
+                        "Passed":   _task_status_icon(r.get("passed")),
+                        "Verdict":  detail.get("verdict", "—") if isinstance(detail, dict) else str(detail)[:40],
+                        "Paused Before Schedule": "Yes" if r.get("passed") else "NO ❌",
+                        "Time (s)": r.get("elapsed_s", "—"),
+                    })
+                if rows:
+                    st.dataframe(rows, use_container_width=True, hide_index=True)
+
+                # Show critical detail if failed
+                for r in results:
+                    if r and not r.get("passed"):
+                        detail = r.get("detail") or r.get("gate_detail") or {}
+                        if isinstance(detail, dict) and detail.get("reason"):
+                            st.error(f"🔴 {detail['reason']}")
+    else:
+        st.info("No gate report yet. Run `python eval/test_gate.py`.")
+
+    st.divider()
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SECTION 6 — Verifier Node Status
+    # ════════════════════════════════════════════════════════════════════════
+    st.markdown("### 🔬 Verifier Node — Borderline Candidate Coverage")
+
+    if trace_report:
+        per_task = trace_report.get("per_task", [])
+        borderline_tasks = [r for r in per_task if r.get("borderline")]
+        if borderline_tasks:
+            for r in borderline_tasks:
+                steps = r.get("steps", [])
+                verifier_present = "verifier" in steps
+                icon = "✅" if verifier_present else "❌"
+                st.markdown(
+                    f"{icon} **{r['task_id']}** — "
+                    f"Trace: `{'` → `'.join(steps)}`"
+                    + ("  ← Verifier fired ✓" if verifier_present else "  ← **Verifier MISSING**")
+                )
+        else:
+            st.info("No borderline task results found in trace report.")
+    else:
+        st.info("Run `python eval/test_trace.py` to see verifier coverage.")
+
+    st.divider()
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SECTION 7 — Raw report viewer
+    # ════════════════════════════════════════════════════════════════════════
+    st.markdown("### 📄 Raw Report Files")
+    report_options = {
+        "trace_report.json":              trace_report,
+        "output_report.json":             output_report,
+        "gate_report.json":               gate_report,
+        "redteam/giskard_findings.json":  red_report,
+        "tasks.json":                     tasks_index,
+    }
+    for fname, data in report_options.items():
+        label = f"{'✅' if data else '⚪'} {fname}"
+        with st.expander(label, expanded=False):
+            if data:
+                st.json(data)
+            else:
+                st.info(f"Not generated yet.")
+
+
 # ── Main layout ───────────────────────────────────────────────────────────────
 
 render_sidebar()
 
-tab1, tab2 = st.tabs(["📋 Shortlist", "🔍 Trajectory & Guardrails"])
+tab1, tab2, tab3 = st.tabs(["📋 Shortlist", "🔍 Trajectory & Guardrails", "📊 Eval Dashboard"])
 
 with tab1:
     render_shortlist_tab()
 
 with tab2:
     render_trajectory_tab()
+
+with tab3:
+    render_eval_dashboard()
